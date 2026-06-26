@@ -1,0 +1,8 @@
+{
+  "provider": "claude",
+  "claude_model": "claude-sonnet-4-6",
+  "local_model": "llama3",
+  "local_url": "http://localhost:11434",
+  "system_prompt": "",
+  "stream": true
+}
