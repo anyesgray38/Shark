@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shark — setup scanner</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:           #f9f9f7;
+    --surface-1:      #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6;
+    --delta-up:       #006300;
+    --delta-down:     #d03b3b;
+    --good:           #0ca30c;
+    --critical:       #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --delta-up:       #0ca30c;
+      --delta-down:     #d03b3b;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --delta-up:       #0ca30c;
+    --delta-down:     #d03b3b;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--page); }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 24px 20px 60px; }
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.02em; }
+  .sub { color: var(--text-muted); font-size: 13px; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin: 16px 0 20px;
+  }
+  .controls select, .controls input, .controls button {
+    font: inherit; color: var(--text-primary);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px;
+  }
+  .controls input#symbols { flex: 1; min-width: 220px; }
+  .controls button { cursor: pointer; font-weight: 600; }
+  .controls button:hover { border-color: var(--baseline); }
+
+  .tiles { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; min-width: 150px; flex: 1;
+  }
+  .tile .k { font-size: 12px; color: var(--text-muted); }
+  .tile .v { font-size: 24px; font-weight: 650; margin-top: 2px; }
+  .tile .v small { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 12px; overflow-x: auto;
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 860px; }
+  th {
+    text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-muted);
+    padding: 10px 12px; border-bottom: 1px solid var(--grid);
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.row { cursor: pointer; }
+  tbody tr.row:hover td { background: color-mix(in srgb, var(--series-1) 6%, transparent); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sym { font-weight: 650; }
+  .muted { color: var(--text-muted); }
+  .up   { color: var(--delta-up); }
+  .down { color: var(--delta-down); }
+
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 1px 8px; margin: 1px 2px 1px 0; color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .badge::before {
+    content: ""; display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; margin-right: 5px; background: var(--text-muted);
+  }
+  .badge.bullish::before { background: var(--good); }
+  .badge.bearish::before { background: var(--critical); }
+
+  .scorebar {
+    display: flex; align-items: center; gap: 8px; justify-content: flex-end;
+  }
+  .scorebar .track {
+    width: 72px; height: 6px; border-radius: 4px; background: var(--grid);
+    overflow: hidden;
+  }
+  .scorebar .fill { height: 100%; border-radius: 4px; background: var(--series-1); }
+  .scorebar .val { font-variant-numeric: tabular-nums; font-weight: 650; min-width: 34px; text-align: right; }
+
+  .spark { display: block; }
+  .spark path.line { fill: none; stroke: var(--series-1); stroke-width: 2; }
+  .spark circle.dot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+
+  tr.detail td { background: color-mix(in srgb, var(--series-1) 4%, transparent); font-size: 13px; }
+  .reason { margin: 2px 0; color: var(--text-secondary); }
+  .reason b { color: var(--text-primary); font-weight: 600; }
+
+  .empty, .error-note { padding: 28px; text-align: center; color: var(--text-muted); }
+  .error-note { color: var(--critical); }
+
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 9px; font-size: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🦈 Shark</h1>
+    <span class="sub">technical setup scanner</span>
+  </header>
+
+  <div class="controls">
+    <label class="sub" for="provider">Source</label>
+    <select id="provider"></select>
+    <input id="symbols" placeholder="symbols, comma-separated (blank = default watchlist)">
+    <label class="sub" for="minscore">Min score</label>
+    <input id="minscore" type="number" value="0" min="0" max="100" style="width:70px">
+    <button id="scan">Scan</button>
+  </div>
+
+  <div class="tiles" id="tiles" hidden>
+    <div class="tile"><div class="k">Symbols scanned</div><div class="v" id="t-count">–</div></div>
+    <div class="tile"><div class="k">Setups found</div><div class="v" id="t-setups">–</div></div>
+    <div class="tile"><div class="k">Top score</div><div class="v" id="t-top">–</div></div>
+    <div class="tile"><div class="k">Scanned at</div><div class="v" id="t-time" style="font-size:16px">–</div></div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Symbol</th><th>30d</th><th class="num">Price</th>
+          <th class="num">1d</th><th class="num">20d</th><th class="num">RSI</th>
+          <th>Trend</th><th>Signals</th><th class="num">Score</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="9" class="empty">Scanning…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<div id="tooltip"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n, d = 2) =>
+  n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d });
+
+async function loadProviders() {
+  const res = await fetch("/api/providers");
+  const provs = await res.json();
+  const sel = $("provider");
+  sel.innerHTML = "";
+  for (const name of Object.keys(provs)) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  }
+  sel.value = "coinbase";
+}
+
+function sparkline(values) {
+  const w = 110, h = 30, pad = 3;
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const px = (i) => pad + (i / (values.length - 1)) * (w - 2 * pad);
+  const py = (v) => h - pad - ((v - min) / range) * (h - 2 * pad);
+  const d = values.map((v, i) => `${i ? "L" : "M"}${px(i).toFixed(1)},${py(v).toFixed(1)}`).join("");
+  const last = values.length - 1;
+  return `<svg class="spark" width="${w}" height="${h}" data-values="${values.join(",")}">
+    <path class="line" d="${d}"></path>
+    <circle class="dot" r="2.5" cx="${px(last).toFixed(1)}" cy="${py(values[last]).toFixed(1)}"></circle>
+  </svg>`;
+}
+
+function deltaCell(v) {
+  const cls = v > 0 ? "up" : v < 0 ? "down" : "muted";
+  const sign = v > 0 ? "+" : "";
+  return `<td class="num ${cls}">${sign}${fmt(v)}%</td>`;
+}
+
+function render(data) {
+  const rows = $("rows");
+  const ok = data.results.filter((r) => !r.error);
+  const errs = data.results.filter((r) => r.error);
+
+  $("tiles").hidden = false;
+  $("t-count").textContent = data.results.length;
+  $("t-setups").textContent = ok.filter((r) => r.signals.length > 0).length;
+  const top = ok[0];
+  $("t-top").innerHTML = top
+    ? `${fmt(top.score, 1)} <small>${top.symbol}</small>`
+    : "–";
+  $("t-time").textContent = new Date(data.generated_at * 1000).toLocaleTimeString();
+
+  rows.innerHTML = "";
+  if (!ok.length && !errs.length) {
+    rows.innerHTML = `<tr><td colspan="9" class="empty">No results.</td></tr>`;
+    return;
+  }
+  for (const r of ok) {
+    const tr = document.createElement("tr");
+    tr.className = "row";
+    const badges = r.signals
+      .map((s) => `<span class="badge ${s.direction}">${s.name.replaceAll("_", " ")}</span>`)
+      .join("") || `<span class="muted">–</span>`;
+    tr.innerHTML = `
+      <td class="sym">${r.symbol}</td>
+      <td>${sparkline(r.sparkline)}</td>
+      <td class="num">${fmt(r.price)}</td>
+      ${deltaCell(r.change_1d)}
+      ${deltaCell(r.change_20d)}
+      <td class="num">${r.rsi ?? "–"}</td>
+      <td>${r.trend === "up" ? "▲ up" : r.trend === "down" ? "▽ down" : "– flat"}</td>
+      <td>${badges}</td>
+      <td><div class="scorebar">
+        <div class="track"><div class="fill" style="width:${r.score}%"></div></div>
+        <span class="val">${fmt(r.score, 1)}</span>
+      </div></td>`;
+    rows.appendChild(tr);
+
+    if (r.signals.length) {
+      const detail = document.createElement("tr");
+      detail.className = "detail";
+      detail.hidden = true;
+      detail.innerHTML = `<td colspan="9">${r.signals
+        .map((s) => `<p class="reason"><b>${s.name.replaceAll("_", " ")}</b> (${s.direction}, ${fmt(s.score, 0)}): ${s.reason}</p>`)
+        .join("")}</td>`;
+      rows.appendChild(detail);
+      tr.addEventListener("click", () => { detail.hidden = !detail.hidden; });
+    }
+  }
+  for (const r of errs) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="sym">${r.symbol}</td><td colspan="8" class="muted">error: ${r.error}</td>`;
+    rows.appendChild(tr);
+  }
+}
+
+async function runScan() {
+  const rows = $("rows");
+  rows.innerHTML = `<tr><td colspan="9" class="empty">Scanning…</td></tr>`;
+  const params = new URLSearchParams({
+    provider: $("provider").value,
+    min_score: $("minscore").value || "0",
+  });
+  const syms = $("symbols").value.trim();
+  if (syms) params.set("symbols", syms);
+  try {
+    const res = await fetch(`/api/scan?${params}`);
+    if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    render(await res.json());
+  } catch (e) {
+    rows.innerHTML = `<tr><td colspan="9" class="error-note">Scan failed: ${e.message}</td></tr>`;
+  }
+}
+
+// Sparkline hover tooltip: nearest point's value.
+const tip = $("tooltip");
+document.addEventListener("mousemove", (e) => {
+  const svg = e.target.closest?.("svg.spark");
+  if (!svg) { tip.style.display = "none"; return; }
+  const values = svg.dataset.values.split(",").map(Number);
+  const rect = svg.getBoundingClientRect();
+  const i = Math.max(0, Math.min(values.length - 1,
+    Math.round(((e.clientX - rect.left) / rect.width) * (values.length - 1))));
+  tip.textContent = `${values.length - 1 - i}d ago: ${fmt(values[i])}`;
+  tip.style.display = "block";
+  tip.style.left = `${e.clientX + 12}px`;
+  tip.style.top = `${e.clientY - 30}px`;
+});
+
+$("scan").addEventListener("click", runScan);
+$("symbols").addEventListener("keydown", (e) => { if (e.key === "Enter") runScan(); });
+
+loadProviders().then(runScan);
+</script>
+</body>
+</html>
