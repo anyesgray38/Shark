@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shark — find the setup before the move</title>
+<meta name="description" content="Shark sweeps your watchlist, scores six technical setups, and ranks what's worth a closer look — CLI, JSON API, or live dashboard.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦈</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:            #0a0e14;
+    --surface:       #111722;
+    --surface-2:     #18202e;
+    --border:        rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text-1:        #f2f5f9;
+    --text-2:        #a8b3c4;
+    --text-3:        #6b7688;
+    --accent:        #3987e5;
+    --accent-strong: #5da2f2;
+    --accent-dim:    rgba(57,135,229,0.12);
+    --good:          #2fbf71;
+    --bad:           #e05252;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-6: 24px; --space-8: 32px; --space-12: 48px; --space-16: 64px;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body {
+    background: var(--bg); color: var(--text-1);
+    font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-strong); text-decoration: none; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent-strong); outline-offset: 3px; border-radius: 4px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 var(--space-6); }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(10,14,20,0.82); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    display: flex; align-items: center; gap: var(--space-6);
+    padding: var(--space-3) var(--space-6); max-width: 1120px; margin: 0 auto;
+  }
+  .logo { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; color: var(--text-1); display: flex; gap: 8px; align-items: center; }
+  .nav-links { display: flex; gap: var(--space-6); margin-left: auto; }
+  .nav-links a { color: var(--text-2); font-size: 14px; font-weight: 500; transition: color 150ms ease-out; }
+  .nav-links a:hover { color: var(--text-1); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent); color: #fff; font-weight: 600; font-size: 15px;
+    padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+    transition: background 150ms ease-out, transform 150ms ease-out;
+  }
+  .btn:hover { background: var(--accent-strong); }
+  .btn:active { transform: scale(0.98); }
+  .btn.ghost {
+    background: transparent; color: var(--text-1);
+    border: 1px solid var(--border-strong);
+  }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btn.small { padding: 7px 14px; font-size: 14px; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: var(--space-16);
+    align-items: center; padding: 88px 0 var(--space-16);
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--accent-strong);
+    background: var(--accent-dim); border: 1px solid rgba(57,135,229,0.25);
+    padding: 4px 12px; border-radius: 999px; margin-bottom: var(--space-6);
+  }
+  h1 {
+    font-size: clamp(2.1rem, 4.5vw + 0.5rem, 3.4rem);
+    line-height: 1.08; letter-spacing: -0.03em; font-weight: 800;
+  }
+  h1 .accent { color: var(--accent-strong); }
+  .lede { margin-top: var(--space-6); font-size: 18px; color: var(--text-2); max-width: 46ch; }
+  .hero-ctas { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-8); }
+  .install {
+    margin-top: var(--space-6); display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 13.5px; color: var(--text-2);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 10px 16px; border-radius: 8px;
+  }
+  .install .dollar { color: var(--text-3); user-select: none; }
+  .install .cmd { color: var(--text-1); }
+
+  /* ---------- mock scan card ---------- */
+  .scan-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 24px 60px rgba(0,0,0,0.45);
+  }
+  .scan-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border);
+    font-size: 13px; color: var(--text-3);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--surface-2); }
+  .scan-head .title { margin-left: 6px; font-family: var(--mono); }
+  .live {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: var(--good); letter-spacing: 0.05em;
+  }
+  .live::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--good); animation: pulse 2s ease-out infinite;
+  }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47,191,113,0.5); } 70% { box-shadow: 0 0 0 7px rgba(47,191,113,0); } 100% { box-shadow: 0 0 0 0 rgba(47,191,113,0); } }
+  @media (prefers-reduced-motion: reduce) { .live::before { animation: none; } }
+  .scan-rows { padding: var(--space-2) 0; }
+  .scan-row {
+    display: grid; grid-template-columns: 86px 1fr 92px 64px;
+    gap: var(--space-3); align-items: center;
+    padding: 10px var(--space-4); font-size: 13.5px;
+    transition: background 150ms ease-out;
+  }
+  .scan-row:hover { background: var(--surface-2); }
+  .scan-row .sym { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-size: 11px; font-weight: 600; color: var(--text-2);
+    border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 9px;
+    white-space: nowrap;
+  }
+  .chip.hot { color: var(--accent-strong); border-color: rgba(57,135,229,0.45); background: var(--accent-dim); }
+  .track-cell { display: block; }
+  .track { display: block; height: 6px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .fill { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-strong)); }
+  .score { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ---------- sections ---------- */
+  section { padding: var(--space-16) 0; }
+  .section-head { max-width: 60ch; margin-bottom: var(--space-12); }
+  h2 { font-size: clamp(1.5rem, 2.5vw + 0.5rem, 2.1rem); letter-spacing: -0.02em; line-height: 1.2; }
+  .section-head p { margin-top: var(--space-3); color: var(--text-2); }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: var(--space-6);
+    transition: border-color 150ms ease-out, transform 150ms ease-out;
+  }
+  .card:hover { border-color: rgba(57,135,229,0.4); transform: translateY(-2px); }
+  .card .icon {
+    width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--accent-dim); color: var(--accent-strong); font-size: 18px;
+    margin-bottom: var(--space-4);
+  }
+  .card h3 { font-size: 16px; font-weight: 700; }
+  .card p { margin-top: var(--space-2); font-size: 14px; color: var(--text-2); }
+
+  /* ---------- how it works ---------- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); counter-reset: step; }
+  .step { position: relative; padding: var(--space-6); border: 1px dashed var(--border-strong); border-radius: var(--radius); }
+  .step::before {
+    counter-increment: step; content: counter(step);
+    display: grid; place-items: center; width: 28px; height: 28px;
+    border-radius: 50%; background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 700; margin-bottom: var(--space-4);
+  }
+  .step h3 { font-size: 15px; font-weight: 700; }
+  .step p { margin-top: var(--space-2); font-size: 14px; color: var(--text-2); }
+
+  .terminal {
+    margin-top: var(--space-12); background: #0c1018; border: 1px solid var(--border);
+    border-radius: var(--radius); overflow-x: auto;
+  }
+  .terminal pre {
+    padding: var(--space-6); font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    color: var(--text-2); min-width: 640px;
+  }
+  .terminal .c-cmd { color: var(--text-1); font-weight: 600; }
+  .terminal .c-dim { color: var(--text-3); }
+  .terminal .c-up { color: var(--good); }
+  .terminal .c-down { color: var(--bad); }
+  .terminal .c-acc { color: var(--accent-strong); }
+
+  /* ---------- providers ---------- */
+  .providers { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+  .provider { display: flex; gap: var(--space-4); align-items: flex-start; padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .provider .tag {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--accent-strong); background: var(--accent-dim);
+    border-radius: 6px; padding: 3px 8px; flex-shrink: 0;
+  }
+  .provider h3 { font-size: 15px; font-weight: 700; }
+  .provider p { margin-top: 4px; font-size: 13.5px; color: var(--text-2); }
+
+  /* ---------- CTA band + footer ---------- */
+  .cta-band {
+    text-align: center; padding: var(--space-16) var(--space-6);
+    background: radial-gradient(60% 120% at 50% 0%, rgba(57,135,229,0.14), transparent 70%);
+    border-top: 1px solid var(--border);
+  }
+  .cta-band h2 { max-width: 24ch; margin: 0 auto; }
+  .cta-band p { margin: var(--space-4) auto 0; color: var(--text-2); max-width: 48ch; }
+  .cta-band .hero-ctas { justify-content: center; }
+  footer {
+    border-top: 1px solid var(--border); padding: var(--space-8) 0;
+    font-size: 13px; color: var(--text-3);
+  }
+  .foot-inner { display: flex; flex-wrap: wrap; gap: var(--space-4); justify-content: space-between; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: var(--space-12); padding-top: var(--space-12); }
+    .grid, .steps, .providers { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .grid, .steps, .providers { grid-template-columns: 1fr; }
+    section { padding: var(--space-12) 0; }
+    .scan-row { grid-template-columns: 76px 1fr 56px; }
+    .scan-row .track-cell { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <div class="nav-inner">
+    <a class="logo" href="#top" aria-label="Shark home">🦈 Shark</a>
+    <div class="nav-links">
+      <a href="#detectors">Detectors</a>
+      <a href="#how">How it works</a>
+      <a href="#providers">Data sources</a>
+    </div>
+    <a class="btn small" href="https://github.com/anyesgray38/Shark">Get Shark</a>
+  </div>
+</nav>
+
+<main id="top">
+  <div class="wrap">
+    <section class="hero" aria-label="Introduction">
+      <div>
+        <span class="eyebrow">Open source · CLI + API + dashboard</span>
+        <h1>Find the setup <span class="accent">before the move.</span></h1>
+        <p class="lede">
+          Shark sweeps your watchlist, scores six technical setups — breakouts,
+          bounces, crosses, squeezes — and ranks what's worth a closer look.
+          No API keys. No terminal-window archaeology.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn" href="https://github.com/anyesgray38/Shark">View on GitHub</a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+        <div class="install" role="figure" aria-label="Install command">
+          <span class="dollar">$</span>
+          <span class="cmd">pip install -r requirements.txt && python -m shark scan</span>
+        </div>
+      </div>
+
+      <div class="scan-card" role="img" aria-label="Example scan results: ranked symbols with signals and scores">
+        <div class="scan-head">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="title">shark scan — coinbase</span>
+          <span class="live">LIVE</span>
+        </div>
+        <div class="scan-rows">
+          <div class="scan-row">
+            <span class="sym">SOL-USD</span>
+            <span class="badges"><span class="chip hot">breakout</span><span class="chip">volume spike</span></span>
+            <span class="track-cell"><span class="track"><span class="fill" style="width:86%"></span></span></span>
+            <span class="score">86.0</span>
+          </div>
+          <div class="scan-row">
+            <span class="sym">BTC-USD</span>
+            <span class="badges"><span class="chip hot">macd cross</span><span class="chip">squeeze</span></span>
+            <span class="track-cell"><span class="track"><span class="fill" style="width:71%"></span></span></span>
+            <span class="score">71.5</span>
+          </div>
+          <div class="scan-row">
+            <span class="sym">ETH-USD</span>
+            <span class="badges"><span class="chip">oversold bounce</span></span>
+            <span class="track-cell"><span class="track"><span class="fill" style="width:58%"></span></span></span>
+            <span class="score">58.0</span>
+          </div>
+          <div class="scan-row">
+            <span class="sym">LINK-USD</span>
+            <span class="badges"><span class="chip">squeeze</span></span>
+            <span class="track-cell"><span class="track"><span class="fill" style="width:44%"></span></span></span>
+            <span class="score">44.0</span>
+          </div>
+          <div class="scan-row">
+            <span class="sym">DOGE-USD</span>
+            <span class="badges"><span class="chip" style="opacity:.55">no setup</span></span>
+            <span class="track-cell"><span class="track"><span class="fill" style="width:8%"></span></span></span>
+            <span class="score">8.0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="detectors" aria-labelledby="detectors-h">
+      <div class="section-head">
+        <h2 id="detectors-h">Six detectors. One ranked answer.</h2>
+        <p>Every detector explains itself in plain English — a score plus the reason it fired, so you can trust the ranking or dig into the why.</p>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="icon" aria-hidden="true">⚡</div><h3>Breakout</h3><p>Close clears the prior 20-day high on elevated volume — momentum with participation behind it.</p></div>
+        <div class="card"><div class="icon" aria-hidden="true">🎯</div><h3>Oversold bounce</h3><p>RSI dips under 30, then turns up alongside price. Catches the recovery, not the falling knife.</p></div>
+        <div class="card"><div class="icon" aria-hidden="true">✂️</div><h3>MACD cross</h3><p>Momentum flips as MACD crosses its signal line — extra weight when it happens below zero, early.</p></div>
+        <div class="card"><div class="icon" aria-hidden="true">✨</div><h3>Golden cross</h3><p>The 50-day average crosses above the 200-day. Slow to fire, hard to fake.</p></div>
+        <div class="card"><div class="icon" aria-hidden="true">📊</div><h3>Volume spike</h3><p>Volume z-score ≥ 2.5 with a directional close. Someone big just showed their hand.</p></div>
+        <div class="card"><div class="icon" aria-hidden="true">🌀</div><h3>Bollinger squeeze</h3><p>Bandwidth in the bottom decile of 120 days — volatility coiling before it picks a direction.</p></div>
+      </div>
+    </section>
+
+    <section id="how" aria-labelledby="how-h">
+      <div class="section-head">
+        <h2 id="how-h">Point. Scan. Rank.</h2>
+        <p>Confirming signals boost a composite score, so one strong setup with backup beats five weak ones.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><h3>Point it at a watchlist</h3><p>Crypto, stocks, or the built-in default lists — one flag switches the data source.</p></div>
+        <div class="step"><h3>Detectors do the reading</h3><p>A year of candles becomes indicators, and indicators become scored, explained setups.</p></div>
+        <div class="step"><h3>Act on a ranked list</h3><p>Terminal table, JSON for your pipeline, or a live dashboard with the reasoning one click away.</p></div>
+      </div>
+      <div class="terminal" role="figure" aria-label="Example terminal session">
+<pre><span class="c-dim">$</span> <span class="c-cmd">python -m shark scan --min-score 40 --detail</span>
+SYMBOL          PRICE     1D%    20D%   RSI  TREND   SCORE  SIGNALS
+-------------------------------------------------------------------
+SOL-USD         75.54  <span class="c-down">-1.50</span>   <span class="c-down">-6.18</span>    48  up      <span class="c-acc">86.0</span>   breakout(78), volume_spike(52)
+BTC-USD     64,721.29  <span class="c-down">-0.95</span>   <span class="c-up">+2.21</span>    52  up      <span class="c-acc">71.5</span>   macd_cross(70), squeeze(48)
+
+<span class="c-cmd">SOL-USD — score 86.0</span>
+  [<span class="c-up">bullish</span>] breakout: close 75.54 above 20-day high 74.90 (+0.9%), volume z=2.6
+  [<span class="c-up">bullish</span>] volume_spike: volume z-score 2.6 on an up day</pre>
+      </div>
+    </section>
+
+    <section id="providers" aria-labelledby="providers-h">
+      <div class="section-head">
+        <h2 id="providers-h">Three data sources, zero API keys.</h2>
+        <p>Adding your own source is one subclass with one method.</p>
+      </div>
+      <div class="providers">
+        <div class="provider"><span class="tag">coinbase</span><div><h3>Crypto</h3><p>Public candles straight from Coinbase Exchange. Works everywhere, no account needed.</p></div></div>
+        <div class="provider"><span class="tag">yahoo</span><div><h3>Stocks &amp; ETFs</h3><p>Daily history via yfinance for equities, ETFs, and indices.</p></div></div>
+        <div class="provider"><span class="tag">synthetic</span><div><h3>Offline demo</h3><p>Deterministic seeded data, so tests and demos run with the network unplugged.</p></div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="cta-band">
+    <h2>Your watchlist is hiding setups. Go find them.</h2>
+    <p>Clone the repo, run one command, and get a ranked read on the market in under a minute.</p>
+    <div class="hero-ctas" style="margin-top: 24px;">
+      <a class="btn" href="https://github.com/anyesgray38/Shark">Get started on GitHub</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>🦈 Shark — open source under MIT</span>
+    <span>Shark surfaces technical patterns for research. Nothing it outputs is financial advice.</span>
+  </div>
+</footer>
+
+</body>
+</html>
