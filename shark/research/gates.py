@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class ValidationMetrics:
     trades: int
@@ -11,6 +12,7 @@ class ValidationMetrics:
     monte_carlo_drawdown_p95: float
     permutation_p_value: float
 
+
 @dataclass(frozen=True)
 class GatePolicy:
     min_trades: int = 100
@@ -21,13 +23,18 @@ class GatePolicy:
     max_mc_drawdown: float = 0.40
     max_permutation_p: float = 0.05
 
-def passes(metrics: ValidationMetrics, policy: GatePolicy = GatePolicy()) -> bool:
+
+_DEFAULT_POLICY = GatePolicy()
+
+
+def passes(metrics: ValidationMetrics, policy: GatePolicy | None = None) -> bool:
+    policy = _DEFAULT_POLICY if policy is None else policy
     return (
-        metrics.trades >= policy.min_trades and
-        metrics.expectancy > policy.min_expectancy and
-        metrics.oos_expectancy > policy.min_oos_expectancy and
-        metrics.walk_forward_expectancy > policy.min_walk_forward_expectancy and
-        metrics.max_drawdown <= policy.max_drawdown and
-        metrics.monte_carlo_drawdown_p95 <= policy.max_mc_drawdown and
-        metrics.permutation_p_value <= policy.max_permutation_p
+        metrics.trades >= policy.min_trades
+        and metrics.expectancy > policy.min_expectancy
+        and metrics.oos_expectancy > policy.min_oos_expectancy
+        and metrics.walk_forward_expectancy > policy.min_walk_forward_expectancy
+        and metrics.max_drawdown <= policy.max_drawdown
+        and metrics.monte_carlo_drawdown_p95 <= policy.max_mc_drawdown
+        and metrics.permutation_p_value <= policy.max_permutation_p
     )
