@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from .models import Candle
 
@@ -26,6 +26,12 @@ class DataQuality:
     errors: tuple[str, ...]
 
 
+def _timestamp_key(timestamp):
+    if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+        return timestamp.replace(tzinfo=timezone.utc)
+    return timestamp.astimezone(timezone.utc)
+
+
 def validate_candles(candles: list[Candle], timeframe: str) -> DataQuality:
     if timeframe not in _TIMEFRAME_MINUTES:
         raise ValueError(f"Unsupported timeframe: {timeframe}")
@@ -40,12 +46,13 @@ def validate_candles(candles: list[Candle], timeframe: str) -> DataQuality:
 
     previous = None
     for candle in candles:
-        if candle.timestamp in seen:
+        timestamp = candle.timestamp
+        if timestamp in seen:
             duplicates += 1
-        seen.add(candle.timestamp)
+        seen.add(timestamp)
 
-        if candle.timestamp.tzinfo is None or candle.timestamp.utcoffset() is None:
-            errors.append(f"naive timestamp at {candle.timestamp!s}")
+        if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+            errors.append(f"naive timestamp at {timestamp!s}")
 
         if not (
             candle.low <= candle.open <= candle.high
@@ -54,13 +61,14 @@ def validate_candles(candles: list[Candle], timeframe: str) -> DataQuality:
         ):
             invalid_ohlc += 1
 
+        current = _timestamp_key(timestamp)
         if previous is not None:
-            delta = candle.timestamp - previous.timestamp
+            delta = current - previous
             if delta <= timedelta(0):
                 out_of_order += 1
             elif delta > expected:
                 gaps += 1
-        previous = candle
+        previous = current
 
     if duplicates:
         errors.append(f"duplicate timestamps: {duplicates}")
