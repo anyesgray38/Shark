@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 
 @dataclass
 class AuditCheck:
@@ -21,7 +22,7 @@ def run_static_audit() -> list[AuditCheck]:
 def audit_report() -> dict:
     checks = run_static_audit()
     return {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "status": "PASS" if all(x.passed for x in checks) else "FAIL",
         "checks": [x.__dict__ for x in checks],
     }
