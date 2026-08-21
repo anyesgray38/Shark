@@ -24,28 +24,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify runner Python
+      - name: Create isolated Python environment
         run: |
           python3 --version
-          python3 -m pip --version
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
 
       - name: Install
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -e .
-          python3 -m pip install pytest ruff
+          .venv/bin/python -m pip install -e .
+          .venv/bin/python -m pip install pytest ruff
 
       - name: Compile check
-        run: python3 -m compileall -q shark tests
+        run: .venv/bin/python -m compileall -q shark tests
 
       - name: Tests before lint normalization
-        run: python3 -m pytest -q
+        run: .venv/bin/python -m pytest -q
 
       - name: Ruff autofix
-        run: python3 -m ruff check . --fix
+        run: .venv/bin/python -m ruff check . --fix
 
       - name: Ruff audit
-        run: python3 -m ruff check .
+        run: .venv/bin/python -m ruff check .
 
       - name: Capture Ruff normalization patch
         if: always()
