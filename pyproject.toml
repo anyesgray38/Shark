@@ -9,6 +9,9 @@ description = "Adaptive quantitative research engine for multi-market strategy d
 requires-python = ">=3.12"
 dependencies = []
 
+[tool.setuptools.packages.find]
+include = ["shark*", "ai*", "audit*", "market*", "research*", "dashboard*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
