@@ -21,27 +21,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify runner Python
+      - name: Create isolated Python environment
         run: |
           python3 --version
-          python3 -m pip --version
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
 
       - name: Install
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -e .
-          python3 -m pip install pytest
+          .venv/bin/python -m pip install -e .
+          .venv/bin/python -m pip install pytest
 
       - name: Deterministic tests
-        run: python3 -m pytest -q
+        run: .venv/bin/python -m pytest -q
 
       - name: Run research agents
-        run: python3 -m shark.agents.daily
+        run: .venv/bin/python -m shark.agents.daily
 
       - name: Validate research report
         run: |
           test -s reports/daily-agent-report.json
-          python3 -m json.tool reports/daily-agent-report.json > /dev/null
+          .venv/bin/python -m json.tool reports/daily-agent-report.json > /dev/null
 
       - name: Upload research report
         if: always()
