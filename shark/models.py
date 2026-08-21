@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+
 
 @dataclass(frozen=True)
 class Candle:
@@ -19,6 +19,7 @@ class Candle:
     def range(self) -> float:
         return self.high - self.low
 
+
 @dataclass(frozen=True)
 class Trade:
     entry_time: datetime
@@ -32,10 +33,11 @@ class Trade:
     def pnl(self) -> float:
         return (self.exit - self.entry) * self.side * self.size
 
+
 @dataclass
 class ResearchResult:
     model_id: str
     trades: list[Trade]
     score: float = 0.0
     status: str = "RESEARCH_ONLY"
-    notes: Optional[str] = None
+    notes: str | None = None
