@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shark-adaptive-research"
+version = "0.1.0"
+description = "Adaptive quantitative research engine for multi-market strategy discovery and validation."
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.setuptools.packages.find]
+include = ["shark*", "ai*", "audit*", "market*", "research*", "dashboard*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
