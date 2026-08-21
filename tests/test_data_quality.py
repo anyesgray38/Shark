@@ -30,7 +30,7 @@ def test_quality_rejects_bad_ohlc_and_gaps():
 def test_quality_detects_duplicates_and_naive_timestamps():
     rows = candles(2)
     rows.append(Candle(rows[-1].timestamp, 102, 103, 101, 102, 1))
-    rows.append(Candle(datetime(2026, 1, 1, 0, 3), 103, 104, 102, 103, 1))
+    rows.append(Candle(datetime(2026, 1, 1, 0, 3, tzinfo=None), 103, 104, 102, 103, 1))
     result = validate_candles(rows, "1m")
     assert not result.valid
     assert result.duplicates == 1
