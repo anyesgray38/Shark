@@ -10,7 +10,7 @@ class RegimeEvent:
 
 
 def classify(events: list[StructureBreak]) -> list[RegimeEvent]:
-    """Classify confirmed directional breaks into BOS, MSS, and CHoCH."""
+    """Classify directional state changes while collapsing repeated BOS events."""
     out=[]
     state=None
     reversal_seen=False
@@ -20,10 +20,9 @@ def classify(events: list[StructureBreak]) -> list[RegimeEvent]:
             out.append(RegimeEvent("BOS", e.direction, e.index, e.broken_level))
             continue
         if e.direction == state:
-            kind="BOS"
-        else:
-            kind="CHoCH" if reversal_seen else "MSS"
-            reversal_seen=True
-            state=e.direction
+            continue
+        kind="CHoCH" if reversal_seen else "MSS"
+        reversal_seen=True
+        state=e.direction
         out.append(RegimeEvent(kind,e.direction,e.index,e.broken_level))
     return out
