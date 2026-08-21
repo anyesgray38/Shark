@@ -1,6 +1,7 @@
-from dataclasses import dataclass, asdict
-from datetime import date
 import json
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+
 
 @dataclass
 class DailyReport:
@@ -13,7 +14,9 @@ class DailyReport:
     audit_status: str
     notes: list[str]
 
-    def to_json(self): return json.dumps(asdict(self), indent=2)
+    def to_json(self):
+        return json.dumps(asdict(self), indent=2)
+
 
 def empty_report():
-    return DailyReport(str(date.today()), 0, 0, 0, 0, 0, "PENDING", [])
+    return DailyReport(str(datetime.now(UTC).date()), 0, 0, 0, 0, 0, "PENDING", [])
