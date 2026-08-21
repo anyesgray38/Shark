@@ -39,8 +39,24 @@ jobs:
       - name: Compile check
         run: python -m compileall -q shark tests
 
-      - name: Tests
+      - name: Tests before lint normalization
         run: python -m pytest -q
 
-      - name: Ruff
+      - name: Ruff autofix
+        run: python -m ruff check . --fix
+
+      - name: Ruff audit
         run: python -m ruff check .
+
+      - name: Capture Ruff normalization patch
+        if: always()
+        run: git diff -- . ':(exclude)ruff-autofix.patch' > ruff-autofix.patch
+
+      - name: Upload Ruff normalization patch
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shark-ruff-autofix-${{ github.run_id }}
+          path: ruff-autofix.patch
+          if-no-files-found: error
+          retention-days: 14
