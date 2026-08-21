@@ -1,4 +1,3 @@
-from datetime import timedelta
 from ..data.models import Candle
 
 _SECONDS={"1m":60,"3m":180,"5m":300,"15m":900,"1h":3600,"4h":14400,"1d":86400}
@@ -6,9 +5,13 @@ _SECONDS={"1m":60,"3m":180,"5m":300,"15m":900,"1h":3600,"4h":14400,"1d":86400}
 def aggregate(candles: list[Candle], timeframe: str) -> list[Candle]:
     if timeframe not in _SECONDS: raise ValueError(f"unsupported timeframe: {timeframe}")
     if not candles: return []
-    width=timedelta(seconds=_SECONDS[timeframe]); out=[]; bucket_start=None; bucket=[]
+    if any(candles[i].timestamp > candles[i+1].timestamp for i in range(len(candles)-1)):
+        raise ValueError("candles must be chronological")
+    seconds=_SECONDS[timeframe]; out=[]; bucket_start=None; bucket=[]
     for c in candles:
-        start=c.timestamp - timedelta(seconds=c.timestamp.timestamp() % _SECONDS[timeframe])
+        start=c.timestamp.replace(second=0,microsecond=0)
+        epoch=int(start.timestamp())
+        start=start.fromtimestamp(epoch - epoch % seconds, tz=start.tzinfo)
         if bucket_start is None: bucket_start=start
         if start != bucket_start:
             out.append(_merge(bucket)); bucket=[c]; bucket_start=start
