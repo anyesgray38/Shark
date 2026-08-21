@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from ..shark.models import Candle
+from shark.models import Candle
 
 @dataclass(frozen=True)
 class FVG:
@@ -9,7 +9,7 @@ class FVG:
     high: float
 
 def detect_fvg(candles: list[Candle]) -> list[FVG]:
-    """Three-candle imbalance detector. Uses only closed candles."""
+    """Three-candle imbalance detector using only closed candles."""
     out = []
     for i in range(2, len(candles)):
         a, _, c = candles[i-2], candles[i-1], candles[i]
@@ -20,16 +20,14 @@ def detect_fvg(candles: list[Candle]) -> list[FVG]:
     return out
 
 def liquidity_sweep(candles: list[Candle], lookback: int = 10) -> list[int]:
-    """Return indices where a candle takes a prior lookback high/low and closes back inside."""
+    """Detect prior-range sweeps that close back inside the range."""
     hits = []
     for i in range(lookback, len(candles)):
         window = candles[i-lookback:i]
         prior_high = max(x.high for x in window)
         prior_low = min(x.low for x in window)
         c = candles[i]
-        swept_high = c.high > prior_high and c.close < prior_high
-        swept_low = c.low < prior_low and c.close > prior_low
-        if swept_high or swept_low:
+        if (c.high > prior_high and c.close < prior_high) or (c.low < prior_low and c.close > prior_low):
             hits.append(i)
     return hits
 
@@ -37,12 +35,9 @@ def candle_features(c: Candle) -> dict[str, float | bool]:
     rng = c.range
     if rng <= 0:
         return {"body_ratio": 0.0, "bullish": c.close > c.open, "upper_wick_ratio": 0.0, "lower_wick_ratio": 0.0}
-    body = c.body
-    upper = c.high - max(c.open, c.close)
-    lower = min(c.open, c.close) - c.low
     return {
-        "body_ratio": body / rng,
+        "body_ratio": c.body / rng,
         "bullish": c.close > c.open,
-        "upper_wick_ratio": upper / rng,
-        "lower_wick_ratio": lower / rng,
+        "upper_wick_ratio": (c.high - max(c.open, c.close)) / rng,
+        "lower_wick_ratio": (min(c.open, c.close) - c.low) / rng,
     }
