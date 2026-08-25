@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shark Agent Handoff",
+  "type": "object",
+  "required": ["status", "evidence", "assumptions", "metrics", "failures", "next_action", "provenance"],
+  "properties": {
+    "status": {"type": "string"},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "assumptions": {"type": "array", "items": {"type": "string"}},
+    "metrics": {"type": "object"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "next_action": {"type": "string"},
+    "provenance": {"type": "array", "items": {"type": "string"}}
+  }
+}
