@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shark Penpot Task",
+  "type": "object",
+  "required": ["operation", "requirement", "target", "state"],
+  "properties": {
+    "operation": {"type": "string"},
+    "requirement": {"type": "string"},
+    "target": {"type": "string"},
+    "state": {"enum": ["UNCONNECTED", "DESIGN_SPEC_ONLY", "CONNECTED_READ", "CONNECTED_WRITE", "VALIDATED"]}
+  }
+}
