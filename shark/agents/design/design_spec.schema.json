@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shark Penpot Design Specification",
+  "type": "object",
+  "required": ["name", "purpose", "surfaces", "state"],
+  "properties": {
+    "name": {"type": "string"},
+    "purpose": {"type": "string"},
+    "state": {"enum": ["UNCONNECTED", "DESIGN_SPEC_ONLY", "CONNECTED_READ", "CONNECTED_WRITE", "VALIDATED"]},
+    "surfaces": {"type": "array", "items": {"type": "string"}},
+    "components": {"type": "array", "items": {"type": "string"}},
+    "tokens": {"type": "array", "items": {"type": "string"}},
+    "implementation_notes": {"type": "array", "items": {"type": "string"}}
+  }
+}
