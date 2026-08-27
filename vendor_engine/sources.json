@@ -1,0 +1,27 @@
+{
+  "sources": [
+    {"id":"alibaba","name":"Alibaba","kind":"marketplace","regions":["global","china","asia"],"url":"https://www.alibaba.com/","search":"https://www.alibaba.com/trade/search?SearchText={query}"},
+    {"id":"global_sources","name":"Global Sources","kind":"marketplace","regions":["global","asia"],"url":"https://www.globalsources.com/","search":"https://www.globalsources.com/searchList?query={query}"},
+    {"id":"made_in_china","name":"Made-in-China","kind":"manufacturer_directory","regions":["china","global"],"url":"https://www.made-in-china.com/","search":"https://www.made-in-china.com/products-search/hot-china-products/{query}.html"},
+    {"id":"hktdc","name":"HKTDC Sourcing","kind":"manufacturer_directory","regions":["hong_kong","china","asia"],"url":"https://sourcing.hktdc.com/","search":"https://sourcing.hktdc.com/en/Search/Product?q={query}"},
+    {"id":"indiamart","name":"IndiaMART","kind":"marketplace","regions":["india","asia"],"url":"https://www.indiamart.com/","search":"https://dir.indiamart.com/search.mp?ss={query}"},
+    {"id":"tradeindia","name":"TradeIndia","kind":"marketplace","regions":["india","asia"],"url":"https://www.tradeindia.com/","search":"https://www.tradeindia.com/search.html?keyword={query}"},
+    {"id":"ec21","name":"EC21","kind":"marketplace","regions":["korea","asia","global"],"url":"https://www.ec21.com/","search":"https://www.ec21.com/products/{query}.html"},
+    {"id":"tradekey","name":"TradeKey","kind":"marketplace","regions":["global","asia","middle_east","africa"],"url":"https://www.tradekey.com/","search":"https://www.tradekey.com/search.html?search={query}"},
+    {"id":"kompass","name":"Kompass","kind":"company_directory","regions":["global","europe","north_america"],"url":"https://www.kompass.com/","search":"https://www.kompass.com/en/searchCompanies/?search={query}"},
+    {"id":"europages","name":"Europages","kind":"company_directory","regions":["europe","global"],"url":"https://www.europages.com/","search":"https://www.europages.com/en/search.html?query={query}"},
+    {"id":"thomasnet","name":"Thomasnet","kind":"manufacturer_directory","regions":["usa","north_america"],"url":"https://www.thomasnet.com/","search":"https://www.thomasnet.com/suppliers?what={query}"},
+    {"id":"fibre2fashion","name":"Fibre2Fashion","kind":"vertical_directory","regions":["india","asia","global"],"verticals":["textiles","apparel","fashion"],"url":"https://www.fibre2fashion.com/","search":"https://www.fibre2fashion.com/industry-article/search?query={query}"},
+    {"id":"panjiva","name":"Panjiva","kind":"trade_intelligence","regions":["global"],"url":"https://panjiva.com/","search":"https://panjiva.com/shipment_search"},
+    {"id":"volza","name":"Volza","kind":"trade_intelligence","regions":["global"],"url":"https://www.volza.com/","search":"https://www.volza.com/search/{query}/"},
+    {"id":"trade_fairs","name":"Trade-fair exhibitor search","kind":"trade_show","regions":["global"],"url":"https://www.tradefairdates.com/","search":"https://www.google.com/search?q={query}+trade+fair+exhibitors+manufacturer"}
+  ],
+  "regions": {
+    "china":["alibaba","global_sources","made_in_china","hktdc"],
+    "india":["indiamart","tradeindia","fibre2fashion"],
+    "korea":["ec21","global_sources"],
+    "europe":["europages","kompass"],
+    "usa":["thomasnet","kompass"],
+    "global":["alibaba","global_sources","ec21","tradekey","kompass","europages","panjiva","volza"]
+  }
+}
