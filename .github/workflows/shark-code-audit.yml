@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   audit:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -35,8 +35,11 @@ jobs:
           .venv/bin/python -m pip install -e .
           .venv/bin/python -m pip install pytest ruff
 
+      - name: Shark game self-audit FIRST
+        run: .venv/bin/python game/audit/preflight.py
+
       - name: Compile check
-        run: .venv/bin/python -m compileall -q shark tests
+        run: .venv/bin/python -m compileall -q shark tests game/audit
 
       - name: Tests before lint normalization
         run: .venv/bin/python -m pytest -q
@@ -46,6 +49,9 @@ jobs:
 
       - name: Ruff audit
         run: .venv/bin/python -m ruff check .
+
+      - name: Re-run Shark self-audit after normalization
+        run: .venv/bin/python game/audit/preflight.py
 
       - name: Capture Ruff normalization patch
         if: always()
