@@ -4,7 +4,6 @@ export function openPosition(state, side, qty, price) {
 
   return {
     ...state,
-    cash: state.cash - qty * price,
     position: { side, qty, entry: price }
   };
 }
@@ -15,15 +14,15 @@ export function closePosition(state, price) {
 
   const direction = p.side === 'long' ? 1 : -1;
   const pnl = (price - p.entry) * p.qty * direction;
-  const equity = state.cash + p.qty * price;
+  const cash = state.cash + pnl;
 
   return {
     ...state,
-    cash: state.cash + p.qty * price + pnl,
-    equity,
+    cash,
+    equity: cash,
     realizedPnl: state.realizedPnl + pnl,
     unrealizedPnl: 0,
-    peakEquity: Math.max(state.peakEquity, equity),
+    peakEquity: Math.max(state.peakEquity, cash),
     position: { side: 'flat', qty: 0, entry: 0 },
     stats: {
       ...state.stats,
@@ -36,8 +35,8 @@ export function closePosition(state, price) {
 
 export function markToMarket(state, price) {
   const p = state.position;
-  if (p.qty <= 0) return { ...state, equity: state.cash };
+  if (p.qty <= 0) return { ...state, equity: state.cash, unrealizedPnl: 0 };
   const direction = p.side === 'long' ? 1 : -1;
   const unrealizedPnl = (price - p.entry) * p.qty * direction;
-  return { ...state, unrealizedPnl, equity: state.cash + p.qty * price };
+  return { ...state, unrealizedPnl, equity: state.cash + unrealizedPnl };
 }
