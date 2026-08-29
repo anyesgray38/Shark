@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shark Idle Trading Game</title>
+</head>
+<body>
+  <main>
+    <h1>Shark Idle Trading Game</h1>
+    <p>Economy foundation initialized.</p>
+    <div id="game"></div>
+  </main>
+  <script type="module">
+    import { createInitialState } from './core/state.js';
+    import { step } from './core/simulation.js';
+    const state = createInitialState();
+    const next = step(state);
+    document.querySelector('#game').textContent = `Capital: $${next.equity.toFixed(2)} | Market: $${next.market.price.toFixed(2)} | Level: ${next.progression.level}`;
+  </script>
+</body>
+</html>
