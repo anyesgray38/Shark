@@ -1,0 +1,37 @@
+name: Validate Agent Skills
+
+on:
+  push:
+    paths:
+      - ".agents/skills/**"
+      - ".github/workflows/validate-agent-skills.yml"
+  pull_request:
+    paths:
+      - ".agents/skills/**"
+      - ".github/workflows/validate-agent-skills.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate skill structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .agents/skills/README.md
+
+          count=0
+          while IFS= read -r -d '' file; do
+            count=$((count + 1))
+            grep -q '^name:' "$file"
+            grep -q '^description:' "$file"
+            test "$(head -n 1 "$file")" = "---"
+          done < <(find .agents/skills -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
+
+          test "$count" -ge 1
+          echo "Validated $count skills."
